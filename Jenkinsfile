@@ -11,12 +11,13 @@ pipeline {
         githubPush()
     }
 
-    environment {
-        saiyidinal
-        IMAGE_NAME           = 'saiyidinal/simple-app-db'
-        IMAGE_TAG            = "${env.BUILD_NUMBER}"
-        REGISTRY_CREDENTIALS = 'dockerhub-credentials'
-        COMPOSE_PROJECT_NAME = 'simple-app-db'
+         environment {
+           saiyidinal
+           IMAGE_NAME           = 'saiyidinal/simple-app-db'
+           IMAGE_TAG            = "${env.BUILD_NUMBER}"
+           REGISTRY_CREDENTIALS = 'dockerhub-credentials'
+           COMPOSE_PROJECT_NAME = 'simple-app-db'
+       }
     }
 
     stages {

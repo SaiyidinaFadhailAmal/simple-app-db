@@ -13,7 +13,7 @@ pipeline {
 
     environment {
         saiyidinal
-        IMAGE_NAME           = 'dockerhubuser/simple-app-db'
+        IMAGE_NAME           = 'saiyidinal/simple-app-db'
         IMAGE_TAG            = "${env.BUILD_NUMBER}"
         REGISTRY_CREDENTIALS = 'dockerhub-credentials'
         COMPOSE_PROJECT_NAME = 'simple-app-db'

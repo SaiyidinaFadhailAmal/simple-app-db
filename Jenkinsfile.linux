@@ -1,0 +1,83 @@
+// Pipeline untuk agent Linux (Jenkins di Docker/Ubuntu/WSL2).
+pipeline {
+    agent any
+
+    options {
+        timeout(time: 20, unit: 'MINUTES')
+        disableConcurrentBuilds()
+    }
+
+    triggers {
+        githubPush()
+    }
+
+    environment {
+        // GANTI "dockerhubuser" dengan username Docker Hub kamu
+        IMAGE_NAME           = 'dockerhubuser/simple-app-db'
+        IMAGE_TAG            = "${env.BUILD_NUMBER}"
+        REGISTRY_CREDENTIALS = 'dockerhub-credentials'
+        COMPOSE_PROJECT_NAME = 'simple-app-db'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Unit Test') {
+            steps {
+                // Tahap "test" pada Dockerfile menjalankan pytest saat build
+                sh 'docker build --target test -t $IMAGE_NAME-test:$IMAGE_TAG .'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build --target runtime -t $IMAGE_NAME:$IMAGE_TAG -t $IMAGE_NAME:latest .'
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: env.REGISTRY_CREDENTIALS,
+                                                  usernameVariable: 'DH_USER',
+                                                  passwordVariable: 'DH_PASS')]) {
+                    sh 'echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin'
+                    sh 'docker push $IMAGE_NAME:$IMAGE_TAG'
+                    sh 'docker push $IMAGE_NAME:latest'
+                }
+            }
+        }
+
+        stage('Deploy (App + MySQL)') {
+            steps {
+                sh 'docker compose up -d --remove-orphans'
+            }
+        }
+
+        stage('Smoke Test') {
+            steps {
+                retry(10) {
+                    sleep time: 6, unit: 'SECONDS'
+                    sh 'curl -fsS http://localhost:5000/health'
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            sh 'docker logout'
+            sh 'docker image rm $IMAGE_NAME-test:$IMAGE_TAG || true'
+            echo 'Selesai build'
+        }
+        success {
+            echo "Build #${env.BUILD_NUMBER} sukses: ${env.IMAGE_NAME}:${env.IMAGE_TAG} berjalan di http://localhost:5000"
+        }
+        failure {
+            sh 'docker compose logs --tail=50 || true'
+        }
+    }
+}

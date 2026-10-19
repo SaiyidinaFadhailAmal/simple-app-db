@@ -36,7 +36,7 @@ PAGE = """
   </style>
 </head>
 <body>
-  <h1>Halo dari Flask + Docker + Jenkins!</h1>
+     <h1>Halo dari Flask + Docker + Jenkins! (build otomatis)</h1>
   <p>Status database:
     <span class="badge {{ 'ok' if db_ok else 'fail' }}">{{ 'terhubung' if db_ok else 'tidak terhubung' }}</span>
   </p>
